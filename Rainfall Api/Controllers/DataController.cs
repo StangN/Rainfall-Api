@@ -38,16 +38,22 @@ namespace Rainfall_Api.Controllers
         {
             try
             {
-                if (stationId == null) return BadRequest();
+                bool isValid = stationId != 0 && count >= 1 && count <= 100;
+
+                if (!isValid) { 
+                    var errorDetail = new List<ErrorDetail>();
+                    if (stationId == 0) errorDetail.Add(new ErrorDetail { PropertyName = "stationId", Message = "Please enter a valid number" });
+                    if (count < 1 || count > 100) errorDetail.Add(new ErrorDetail { PropertyName = "count", Message = "Please enter a valid number between 1 and 100" });
+                    return BadRequest(new Error { Message = "Invalid parameters", Details = errorDetail });
+                } 
                 RainfallReadingResponse data = await GetRainfallReadingsFromApi(stationId, count);
-                if (data.Readings.Count == 0) return NotFound();
+                if (data.Readings.Count == 0) return NotFound(new Error { Message = "No readings found for the specified stationId" });
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                var error = new Error();
-                return StatusCode(500);
+                
+                return StatusCode(500, new Error { Message = ex.Message});
             }
 
         }
