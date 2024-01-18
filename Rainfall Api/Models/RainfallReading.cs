@@ -2,12 +2,12 @@
 {
     public class RainfallReadingResponse
     {
-        public RainfallReading[] Readings { get; set; }
+        public List<RainfallReading> Readings { get; set; }
     }
 
     public class RainfallReading
     {
-        public int DateMeasured { get; set; }
+        public DateTime DateMeasured { get; set; }
 
         public int AmountMeasured { get; set; }
     }

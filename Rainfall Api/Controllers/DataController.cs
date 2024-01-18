@@ -4,12 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using Rainfall_Api.Models;
 using System.Diagnostics;
 using System.Net;
-
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using System.Linq;
 
 namespace Rainfall_Api.Controllers
 {
     public class HomeController : Controller
     {
+        static readonly HttpClient client = new HttpClient();
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration _configuration;
 
@@ -36,21 +39,37 @@ namespace Rainfall_Api.Controllers
             try
             {
                 if (stationId == null) return BadRequest();
-                RainfallReading data = GetRainfallReadingsFromApi(stationId, count);
-                if (data == null) return NotFound();
+                RainfallReadingResponse data = await GetRainfallReadingsFromApi(stationId, count);
+                if (data.Readings.Count == 0) return NotFound();
                 return Ok(data);
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 var error = new Error();
                 return StatusCode(500);
             }
 
         }
 
-        private RainfallReading GetRainfallReadingsFromApi(int stationId, int count)
+        private async Task<RainfallReadingResponse> GetRainfallReadingsFromApi(int stationId, int count)
         {
-            return new RainfallReading();
+            RainfallReadingResponse parsedResponce = new RainfallReadingResponse { Readings = new List<RainfallReading>() };
+
+            string QUERY_URL = "https://environment.data.gov.uk/flood-monitoring/id/stations/" + stationId + "/readings?_sorted&_limit=" + count;
+            Uri queryUri = new Uri(QUERY_URL);
+            using HttpResponseMessage responce = await client.GetAsync(queryUri);
+            dynamic obj = JsonConvert.DeserializeObject(await responce.Content.ReadAsStringAsync());
+            foreach (var item in obj.items)
+            {
+                var parsedItem = new RainfallReading { DateMeasured = item.dateTime, AmountMeasured = item.value };
+                if (parsedItem != null)
+                {
+                    parsedResponce.Readings.Add(parsedItem);
+                }
+            }
+            
+            return parsedResponce;
         }
     }
 }
