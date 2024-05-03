@@ -52,7 +52,6 @@ namespace Rainfall_Api.Controllers
             }
             catch (Exception ex)
             {
-                
                 return StatusCode(500, new Error { Message = ex.Message});
             }
 
